@@ -1,3 +1,4 @@
+from __future__ import annotations
 from fixture.application import Application
 import pytest
 import json
@@ -17,14 +18,12 @@ def load_config(file):
 
 
 @pytest.fixture(scope="session")
-def app(request):
+def app(request, config):
     global fixture
-    global target
     browser = request.config.getoption("--browser")
-    web_config = load_config(request.config.getoption("--target"))
     if fixture is None or not fixture.is_valid():
-        fixture = Application(browser=browser, base_url=web_config['web']['baseUrl'])
-    fixture.session.ensure_login(username=web_config['webadmin']['username'], password=web_config['webadmin']['password'])
+        fixture = Application(browser=browser, config=config)
+    fixture.session.ensure_login(username=config['webadmin']['username'], password=config['webadmin']['password'])
     return fixture
 
 
@@ -35,6 +34,11 @@ def stop(request):
         fixture.destroy()
     request.addfinalizer(fin)
     return fixture
+
+
+@pytest.fixture(scope="session")
+def config(request):
+    return load_config(request.config.getoption("--target"))
 
 
 def pytest_addoption(parser):
